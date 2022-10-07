@@ -1,0 +1,102 @@
+---
+title: "Data and Technology Tweets I've Liked"
+author: 
+date: 
+output:
+  html_document:
+    df_print: paged
+    toc: false
+runtime: shiny
+---
+
+<style>
+  header{}
+/* Apply font to entire document: */
+body{
+text-align: justify;
+font-family: Tahoma;
+font-color: white;
+font-size: 11pt;
+background-color: #ECECEC;
+
+}
+
+a[href*="//"] {
+color: #191414;
+font-weight: bold
+}
+                                
+a[href^="mailto:"] {
+color: #191414;
+font-weight: bold
+}
+
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Load Required R Packages
+library(tidyverse)
+library(DT)
+library(lubridate)
+library(readxl)
+library(shinyWidgets)
+
+faves <- readRDS('faves.rds')
+
+langs <- c("rstats| r |rstudio|tidyverse", "python", "sql", "excel ", "tableau", "power bi")
+names(langs) <- c("R", "Python", "SQL", "Excel", "Tableau", "Power BI")
+langs <- sort(langs)
+subjects <- c("nlp", "machine learning", "shiny", "data vi", "cloud", "data mining|datamining", "web3|crypto|blockchain|nft", "statistics", "deeplearning|neuralnet|neural|artificial|tensor")
+names(subjects) <- c("Natural Language Processing", "Machine Learning", 
+                     "Shiny Dashboards", "Data Visualisation", "Cloud Computing", "Data Mining", "Web3, Blockchain, NFTs and Crypto", "Statistics", "Deep Learning, Neural Networks and AI")
+subjects <- sort(subjects)
+```
+
+#### This interactive Shiny document enables a search through tweets I've liked that relate to data science and technology.
+
+Use the drop-down menus to search for particular technologies (R, Python, etc.), and/or search for specific topics (e.g. Machine Learning, NLP). The table beneath shows the text of the tweets returned, some info on their relative popularity (RTs and favourite counts) and a link out to the resource contained within the tweet (assuming it is still online). You can also use the search box within the table to hone down your search further. Hopefully you'll find something useful.
+
+To see more of my work, [visit my website](https://www.popmusicresearch.org){target="_blank"}, where I'll shortly be posting a walk-though of the process behind this mini-site. In the meantime, feel free to [drop me a line](mailto:craig.hamilton@gmail.com), or you'll find me on Twitter as [@craigfots](https://twitter.com/craigfots){target="_blank"}. 
+
+#### Search Tweets
+
+```{r user_select_project, echo=FALSE}
+##First row of inputs
+fluidRow(column(6, 
+         pickerInput("lang", "Select Language / Software / Service:", 
+                            choices = langs, 
+                            options = list(`actions-box` = TRUE), 
+                            multiple = TRUE, selected = "python", width = '100%')),
+         (column(6,
+          pickerInput("subject", "Filter by Subject / Area:", 
+                            choices = subjects, 
+                            options = list(`actions-box` = TRUE), 
+                            multiple = TRUE, width = '100%'))),)
+```
+
+#### Explore Results
+
+```{r faves_reactive, echo=FALSE}
+faves_new <- reactive({
+  faves %>%
+    filter(str_detect(lower_text, str_c(input$lang, collapse = '|'))) %>%
+    filter(str_detect(lower_text, str_c(input$subject, collapse = '|'))) %>%
+    arrange(-favorite_count,-retweet_count)
+})
+```
+
+
+```{r projecttable, echo=FALSE}
+renderDT({
+  faves_new <- faves_new()
+  faves_new <- faves_new[, c(4, 19, 20, 46)]
+  DT::datatable(faves_new,
+                options = list(pageLength = 5), 
+                colnames = c("Tweet Text", "#RTs", "#Faves", "Content"),
+                rownames = FALSE,
+                escape = F)  
+})
+```
+
